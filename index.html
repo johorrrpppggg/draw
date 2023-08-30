@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>5秒で自動消去するお絵描きページ</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let isDrawing = false;
+        let x = 0;
+        let y = 0;
+        let lines = [];
+        let eraseLines = [];
+        let erase = false;
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            redraw();
+        }
+
+        function redraw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                ctx.beginPath();
+                ctx.strokeStyle = line.color;
+                ctx.lineWidth = line.width;
+                ctx.moveTo(line.x1, line.y1);
+                ctx.lineTo(line.x2, line.y2);
+                ctx.stroke();
+                ctx.closePath();
+            }
+        }
+
+        function drawLine(x1, y1, x2, y2) {
+            if (erase) {
+                ctx.globalCompositeOperation = 'destination-out';
+                ctx.strokeStyle = 'rgba(0,0,0,1)';
+            } else {
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.strokeStyle = 'black';
+            }
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+            ctx.closePath();
+            lines.push({
+                x1: x1,
+                y1: y1,
+                x2: x2,
+                y2: y2,
+                color: ctx.strokeStyle,
+                width: ctx.lineWidth
+            });
+            setTimeout(function() {
+                lines.shift();
+                redraw();
+            }, 5000); // 時間指定
+        }
+
+        canvas.addEventListener('mousedown', function(e) {
+            x = e.clientX;
+            y = e.clientY;
+            isDrawing = true;
+        });
+
+        canvas.addEventListener('mousemove', function(e) {
+            if (isDrawing === true) {
+                drawLine(x, y, e.clientX, e.clientY);
+                x = e.clientX;
+                y = e.clientY;
+            }
+        });
+
+        window.addEventListener('mouseup', function(e) {
+            if (isDrawing === true) {
+                drawLine(x, y, e.clientX, e.clientY);
+                x = 0;
+                y = 0;
+                isDrawing = false;
+            }
+        });
+
+        window.addEventListener('keydown', function(e) {
+            if (e.key === 'e') {
+                erase = !erase;
+            }
+        });
+
+        window.addEventListener('resize', resizeCanvas);
+
+        resizeCanvas();
+    </script>
+</body>
+</html>
